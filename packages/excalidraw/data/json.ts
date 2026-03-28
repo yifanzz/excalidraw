@@ -11,6 +11,8 @@ import type { MaybePromise } from "@excalidraw/common/utility-types";
 
 import { cleanAppStateForExport, clearAppStateForDatabase } from "../appState";
 
+import { calculateScrollCenter } from "../scene";
+
 import { isImageFileHandle, loadFromBlob } from "./blob";
 import {
   fileOpen,
@@ -19,7 +21,6 @@ import {
   saveToExcalidrawDirectory,
 } from "./filesystem";
 import { restoreAppState, restoreElements } from "./restore";
-import { calculateScrollCenter } from "../scene";
 
 import type { AppState, BinaryFiles, LibraryItems } from "../types";
 import type {
@@ -146,13 +147,14 @@ export const loadFromDirectory = async (
   localAppState: AppState,
   localElements: readonly ExcalidrawElement[] | null,
 ) => {
-  const { sceneJSON, files, directoryHandle } =
-    await openExcalidrawDirectory();
+  const { sceneJSON, files, directoryHandle } = await openExcalidrawDirectory();
 
   const data = JSON.parse(sceneJSON);
 
   if (!isValidExcalidrawData(data)) {
-    throw new Error("Error: invalid directory format — scene.json is not valid Excalidraw data");
+    throw new Error(
+      "Error: invalid directory format — scene.json is not valid Excalidraw data",
+    );
   }
 
   return {

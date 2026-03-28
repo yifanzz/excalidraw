@@ -6,13 +6,10 @@ import {
 
 import { IMAGE_MIME_TYPES, MIME_TYPES } from "@excalidraw/common";
 
-import type { ValueOf } from "@excalidraw/common/utility-types";
-
 import { getDataURL } from "./blob";
-
 import { normalizeFile } from "./blob";
 
-import type { BinaryFileData, BinaryFiles, DataURL } from "../types";
+import type { BinaryFileData, BinaryFiles } from "../types";
 
 type FILE_EXTENSION = Exclude<keyof typeof MIME_TYPES, "binary">;
 
@@ -188,15 +185,17 @@ export const saveToExcalidrawDirectory = async (opts: {
       parsed.files as Record<string, BinaryFileData>,
     )) {
       const ext =
-        mimeToExt[fileData.mimeType as string] ||
-        mimeToExt[MIME_TYPES.binary];
+        mimeToExt[fileData.mimeType as string] || mimeToExt[MIME_TYPES.binary];
       const assetFileName = `${fileData.id}.${ext}`;
 
       // Decode dataURL to binary and write to asset file
       const dataURL = fileData.dataURL as string;
       const dataIndexStart = dataURL.indexOf(",");
       const byteString = atob(dataURL.slice(dataIndexStart + 1));
-      const mimeType = dataURL.slice(0, dataIndexStart).split(":")[1].split(";")[0];
+      const mimeType = dataURL
+        .slice(0, dataIndexStart)
+        .split(":")[1]
+        .split(";")[0];
 
       const ab = new ArrayBuffer(byteString.length);
       const ia = new Uint8Array(ab);
