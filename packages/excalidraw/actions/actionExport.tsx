@@ -19,7 +19,12 @@ import { Toast } from "../components/Toast";
 import { ToolButton } from "../components/ToolButton";
 import { Tooltip } from "../components/Tooltip";
 import { ExportIcon, questionCircle, saveAs } from "../components/icons";
-import { loadFromJSON, saveAsJSON } from "../data";
+import {
+  loadFromJSON,
+  saveAsJSON,
+  saveAsJSONToDirectory,
+  loadFromDirectory,
+} from "../data";
 import { isImageFileHandle } from "../data/blob";
 import { nativeFileSystemSupported } from "../data/filesystem";
 
@@ -305,7 +310,7 @@ export const actionSaveToActiveFile = register({
   predicate: (elements, appState, props, app) => {
     return (
       !!app.props.UIOptions.canvasActions.saveToActiveFile &&
-      !!appState.fileHandle &&
+      !!(appState.fileHandle || appState.directoryHandle) &&
       !appState.viewModeEnabled
     );
   },
@@ -316,12 +321,32 @@ export const actionSaveToActiveFile = register({
     onExportInProgress = true;
 
     const previousFileHandle = appState.fileHandle;
+    const previousDirectoryHandle = appState.directoryHandle;
     const filename = app.getName();
 
     const { abortController, data: exportedDataPromise } =
       prepareDataForJSONExport(elements, appState, app.files, app);
 
     try {
+      // Directory mode: save to .excalidraw directory
+      if (previousDirectoryHandle) {
+        const { directoryHandle } = await saveAsJSONToDirectory({
+          data: exportedDataPromise,
+          directoryHandle: previousDirectoryHandle,
+          name: filename,
+        });
+        return {
+          captureUpdate: CaptureUpdateAction.NEVER,
+          appState: {
+            directoryHandle,
+            toast: {
+              message: t("toast.fileSaved"),
+              duration: 1500,
+            },
+          },
+        };
+      }
+
       const { fileHandle } = isImageFileHandle(previousFileHandle)
         ? await resaveAsImageWithScene(
             exportedDataPromise,
@@ -473,6 +498,97 @@ export const actionLoadScene = register({
     }
   },
   keyTest: (event) => event[KEYS.CTRL_OR_CMD] && event.key === KEYS.O,
+});
+
+// ---------------------------------------------------------------------------
+// Directory-based open/save actions
+// ---------------------------------------------------------------------------
+
+export const actionLoadDirectory = register({
+  name: "loadDirectory",
+  label: "buttons.load",
+  trackEvent: { category: "export" },
+  predicate: (elements, appState, props, app) => {
+    return (
+      !!app.props.UIOptions.canvasActions.loadScene && !appState.viewModeEnabled
+    );
+  },
+  perform: async (elements, appState, _, app) => {
+    try {
+      const {
+        elements: loadedElements,
+        appState: loadedAppState,
+        files,
+      } = await loadFromDirectory(appState, elements);
+      return {
+        elements: loadedElements,
+        appState: loadedAppState,
+        files,
+        captureUpdate: CaptureUpdateAction.IMMEDIATELY,
+      };
+    } catch (error: any) {
+      if (error?.name === "AbortError") {
+        console.warn(error);
+        return false;
+      }
+      return {
+        elements,
+        appState: { ...appState, errorMessage: error.message },
+        files: app.files,
+        captureUpdate: CaptureUpdateAction.EVENTUALLY,
+      };
+    }
+  },
+});
+
+export const actionSaveFileToDiskAsDirectory = register({
+  name: "saveFileToDiskAsDirectory",
+  label: "exportDialog.disk_title",
+  icon: ExportIcon,
+  viewMode: true,
+  trackEvent: { category: "export" },
+  perform: async (elements, appState, value, app) => {
+    if (onExportInProgress) {
+      return false;
+    }
+    onExportInProgress = true;
+
+    const { abortController, data: exportedDataPromise } =
+      prepareDataForJSONExport(elements, appState, app.files, app);
+
+    try {
+      const { directoryHandle } = await saveAsJSONToDirectory({
+        data: exportedDataPromise,
+        directoryHandle: null,
+        name: app.getName(),
+      });
+
+      return {
+        captureUpdate: CaptureUpdateAction.NEVER,
+        appState: {
+          openDialog: null,
+          directoryHandle,
+          fileHandle: null,
+          toast: { message: t("toast.fileSaved"), duration: 3000 },
+        },
+      };
+    } catch (error: any) {
+      abortController.abort();
+      if (error?.name !== "AbortError") {
+        console.error(error);
+      } else {
+        console.warn(error);
+      }
+      return {
+        captureUpdate: CaptureUpdateAction.NEVER,
+        appState: {
+          toast: null,
+        },
+      };
+    } finally {
+      onExportInProgress = false;
+    }
+  },
 });
 
 export const actionExportWithDarkMode = register<
