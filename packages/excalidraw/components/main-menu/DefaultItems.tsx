@@ -7,7 +7,9 @@ import type { Theme } from "@excalidraw/element/types";
 import {
   actionClearCanvas,
   actionLoadScene,
+  actionLoadDirectory,
   actionSaveToActiveFile,
+  actionSaveFileToDiskAsDirectory,
   actionShortcuts,
   actionToggleArrowBinding,
   actionToggleGridMode,
@@ -119,6 +121,70 @@ export const SaveToActiveFile = () => {
   );
 };
 SaveToActiveFile.displayName = "SaveToActiveFile";
+
+export const LoadDirectory = () => {
+  const { t } = useI18n();
+  const actionManager = useExcalidrawActionManager();
+  const elements = useExcalidrawElements();
+
+  if (!actionManager.isActionEnabled(actionLoadDirectory)) {
+    return null;
+  }
+
+  const handleSelect = async () => {
+    if (
+      !elements.length ||
+      (await openConfirmModal({
+        title: t("overwriteConfirm.modal.loadFromFile.title"),
+        actionLabel: t("overwriteConfirm.modal.loadFromFile.button"),
+        color: "warning",
+        description: (
+          <Trans
+            i18nKey="overwriteConfirm.modal.loadFromFile.description"
+            bold={(text) => <strong>{text}</strong>}
+            br={() => <br />}
+          />
+        ),
+      }))
+    ) {
+      actionManager.executeAction(actionLoadDirectory);
+    }
+  };
+
+  return (
+    <DropdownMenuItem
+      icon={LoadIcon}
+      onSelect={handleSelect}
+      data-testid="load-directory-button"
+      aria-label="Open directory"
+    >
+      {"Open directory..."}
+    </DropdownMenuItem>
+  );
+};
+LoadDirectory.displayName = "LoadDirectory";
+
+export const SaveAsDirectory = () => {
+  const actionManager = useExcalidrawActionManager();
+
+  if (!actionManager.isActionEnabled(actionSaveFileToDiskAsDirectory)) {
+    return null;
+  }
+
+  return (
+    <DropdownMenuItem
+      icon={ExportIcon}
+      onSelect={() =>
+        actionManager.executeAction(actionSaveFileToDiskAsDirectory)
+      }
+      data-testid="save-as-directory-button"
+      aria-label="Save as directory"
+    >
+      {"Save as directory..."}
+    </DropdownMenuItem>
+  );
+};
+SaveAsDirectory.displayName = "SaveAsDirectory";
 
 export const SaveAsImage = () => {
   const setAppState = useExcalidrawSetAppState();
