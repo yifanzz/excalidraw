@@ -37,12 +37,7 @@ import type { ExportType } from "../scene/types";
 import type { AppState, BinaryFiles } from "../types";
 
 export { loadFromBlob } from "./blob";
-export {
-  loadFromJSON,
-  saveAsJSON,
-  saveAsJSONToDirectory,
-  loadFromDirectory,
-} from "./json";
+export { loadFromJSON, saveAsJSON, loadFromDirectory } from "./json";
 
 export type ExportedElements = readonly NonDeletedExcalidrawElement[] & {
   _brand: "exportedElements";

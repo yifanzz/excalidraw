@@ -26,9 +26,7 @@ export const AppMainMenu: React.FC<{
   return (
     <MainMenu>
       <MainMenu.DefaultItems.LoadScene />
-      <MainMenu.DefaultItems.LoadDirectory />
       <MainMenu.DefaultItems.SaveToActiveFile />
-      <MainMenu.DefaultItems.SaveAsDirectory />
       <MainMenu.DefaultItems.Export />
       <MainMenu.DefaultItems.SaveAsImage />
       {props.isCollabEnabled && (

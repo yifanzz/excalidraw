@@ -42,8 +42,6 @@ export {
   actionSaveToActiveFile,
   actionSaveFileToDisk,
   actionLoadScene,
-  actionLoadDirectory,
-  actionSaveFileToDiskAsDirectory,
 } from "./actionExport";
 
 export { actionCopyStyles, actionPasteStyles } from "./actionStyles";
