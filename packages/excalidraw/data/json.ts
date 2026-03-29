@@ -11,16 +11,8 @@ import type { MaybePromise } from "@excalidraw/common/utility-types";
 
 import { cleanAppStateForExport, clearAppStateForDatabase } from "../appState";
 
-import { calculateScrollCenter } from "../scene";
-
 import { isImageFileHandle, loadFromBlob } from "./blob";
-import {
-  fileOpen,
-  fileSave,
-  openExcalidrawDirectory,
-  saveToExcalidrawDirectory,
-} from "./filesystem";
-import { restoreAppState, restoreElements } from "./restore";
+import { fileOpen, fileSave } from "./filesystem";
 
 import type { AppState, BinaryFiles, LibraryItems } from "../types";
 import type {
@@ -118,64 +110,6 @@ export const loadFromJSON = async (
     // extensions: ["json", "excalidraw", "png", "svg"],
   });
   return loadFromBlob(file, localAppState, localElements, file.handle);
-};
-
-// ---------------------------------------------------------------------------
-// Directory-based .excalidraw format
-// ---------------------------------------------------------------------------
-
-export const saveAsJSONToDirectory = async ({
-  data,
-  directoryHandle,
-  name,
-}: {
-  data: MaybePromise<JSONExportData>;
-  directoryHandle?: FileSystemDirectoryHandle | null;
-  name: string;
-}): Promise<{ directoryHandle: FileSystemDirectoryHandle }> => {
-  const { elements, appState, files } = await Promise.resolve(data);
-  const serialized = serializeAsJSON(elements, appState, files, "local");
-  return saveToExcalidrawDirectory({
-    sceneJSON: serialized,
-    files: filterOutDeletedFiles(elements, files),
-    directoryHandle,
-    name,
-  });
-};
-
-export const loadFromDirectory = async (
-  localAppState: AppState,
-  localElements: readonly ExcalidrawElement[] | null,
-) => {
-  const { sceneJSON, files, directoryHandle } = await openExcalidrawDirectory();
-
-  const data = JSON.parse(sceneJSON);
-
-  if (!isValidExcalidrawData(data)) {
-    throw new Error(
-      "Error: invalid directory format — scene.json is not valid Excalidraw data",
-    );
-  }
-
-  return {
-    elements: restoreElements(data.elements || [], localElements, {
-      repairBindings: true,
-      deleteInvisibleElements: true,
-    }),
-    appState: restoreAppState(
-      {
-        theme: localAppState?.theme,
-        fileHandle: null,
-        directoryHandle,
-        ...cleanAppStateForExport(data.appState || {}),
-        ...(localAppState
-          ? calculateScrollCenter(data.elements || [], localAppState)
-          : {}),
-      },
-      localAppState,
-    ),
-    files,
-  };
 };
 
 export const isValidExcalidrawData = (data?: {

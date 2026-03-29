@@ -19,8 +19,7 @@ import { Toast } from "../components/Toast";
 import { ToolButton } from "../components/ToolButton";
 import { Tooltip } from "../components/Tooltip";
 import { ExportIcon, questionCircle, saveAs } from "../components/icons";
-import { saveAsJSON, loadFromDirectory } from "../data";
-import { saveAsJSONToDirectory } from "../data/json";
+import { saveAsJSON, loadFromJSON } from "../data";
 import { isImageFileHandle } from "../data/blob";
 import { nativeFileSystemSupported } from "../data/filesystem";
 
@@ -306,7 +305,7 @@ export const actionSaveToActiveFile = register({
   predicate: (elements, appState, props, app) => {
     return (
       !!app.props.UIOptions.canvasActions.saveToActiveFile &&
-      !!(appState.fileHandle || appState.directoryHandle) &&
+      !!appState.fileHandle &&
       !appState.viewModeEnabled
     );
   },
@@ -317,32 +316,12 @@ export const actionSaveToActiveFile = register({
     onExportInProgress = true;
 
     const previousFileHandle = appState.fileHandle;
-    const previousDirectoryHandle = appState.directoryHandle;
     const filename = app.getName();
 
     const { abortController, data: exportedDataPromise } =
       prepareDataForJSONExport(elements, appState, app.files, app);
 
     try {
-      // Directory mode: save to .excalidraw directory
-      if (previousDirectoryHandle) {
-        const { directoryHandle } = await saveAsJSONToDirectory({
-          data: exportedDataPromise,
-          directoryHandle: previousDirectoryHandle,
-          name: filename,
-        });
-        return {
-          captureUpdate: CaptureUpdateAction.NEVER,
-          appState: {
-            directoryHandle,
-            toast: {
-              message: t("toast.fileSaved"),
-              duration: 1500,
-            },
-          },
-        };
-      }
-
       const { fileHandle } = isImageFileHandle(previousFileHandle)
         ? await resaveAsImageWithScene(
             exportedDataPromise,
@@ -409,18 +388,17 @@ export const actionSaveFileToDisk = register({
       prepareDataForJSONExport(elements, appState, app.files, app);
 
     try {
-      const { directoryHandle } = await saveAsJSONToDirectory({
+      const { fileHandle: savedFileHandle } = await saveAsJSON({
         data: exportedDataPromise,
-        directoryHandle: null,
-        name: app.getName(),
+        filename: app.getName(),
+        fileHandle: null,
       });
 
       return {
         captureUpdate: CaptureUpdateAction.NEVER,
         appState: {
           openDialog: null,
-          directoryHandle,
-          fileHandle: null,
+          fileHandle: savedFileHandle,
           toast: { message: t("toast.fileSaved"), duration: 3000 },
         },
       };
@@ -474,7 +452,7 @@ export const actionLoadScene = register({
         elements: loadedElements,
         appState: loadedAppState,
         files,
-      } = await loadFromDirectory(appState, elements);
+      } = await loadFromJSON(appState, elements);
       return {
         elements: loadedElements,
         appState: loadedAppState,
