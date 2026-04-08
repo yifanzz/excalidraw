@@ -2070,7 +2070,14 @@ export const actionCycleStrokeStyle = register({
   label: "Cycle stroke style",
   trackEvent: false,
   perform: (elements, appState) => {
-    const current = appState.currentItemStrokeStyle;
+    const selected = getTargetElements(
+      getNonDeletedElements(elements),
+      appState,
+    );
+    const current =
+      selected.length > 0
+        ? selected[0].strokeStyle
+        : appState.currentItemStrokeStyle;
     const next =
       STROKE_STYLES[
         (STROKE_STYLES.indexOf(current) + 1) % STROKE_STYLES.length
@@ -2095,8 +2102,17 @@ export const actionCycleStrokeWidth = register({
   label: "Cycle stroke width",
   trackEvent: false,
   perform: (elements, appState) => {
-    const current = appState.currentItemStrokeWidth;
-    const idx = STROKE_WIDTHS.indexOf(current);
+    const selected = getTargetElements(
+      getNonDeletedElements(elements),
+      appState,
+    );
+    const current =
+      selected.length > 0
+        ? selected[0].strokeWidth
+        : appState.currentItemStrokeWidth;
+    const idx = STROKE_WIDTHS.indexOf(
+      current as ExcalidrawElement["strokeWidth"],
+    );
     const next =
       STROKE_WIDTHS[(idx === -1 ? 0 : idx + 1) % STROKE_WIDTHS.length];
     return {
@@ -2119,7 +2135,23 @@ export const actionCycleTextAlign = register({
   label: "Cycle text alignment",
   trackEvent: false,
   perform: (elements, appState, _value, app) => {
-    const current = appState.currentItemTextAlign;
+    const selected = getTargetElements(
+      getNonDeletedElements(elements),
+      appState,
+    );
+    const elementsMap = app.scene.getNonDeletedElementsMap();
+    let current: TextAlign = appState.currentItemTextAlign;
+    for (const el of selected) {
+      if (isTextElement(el)) {
+        current = el.textAlign;
+        break;
+      }
+      const boundText = getBoundTextElement(el, elementsMap);
+      if (boundText) {
+        current = boundText.textAlign;
+        break;
+      }
+    }
     const next =
       TEXT_ALIGNS[(TEXT_ALIGNS.indexOf(current) + 1) % TEXT_ALIGNS.length];
     return {
@@ -2160,10 +2192,19 @@ export const actionCycleVerticalAlign = register({
       getNonDeletedElements(elements),
       appState,
     );
-    const currentFromElement = selected.find((el) => isTextElement(el));
-    const current = currentFromElement
-      ? (currentFromElement as ExcalidrawTextElement).verticalAlign
-      : VERTICAL_ALIGN.TOP;
+    const elementsMap = app.scene.getNonDeletedElementsMap();
+    let current: string = VERTICAL_ALIGN.TOP;
+    for (const el of selected) {
+      if (isTextElement(el)) {
+        current = el.verticalAlign;
+        break;
+      }
+      const boundText = getBoundTextElement(el, elementsMap);
+      if (boundText) {
+        current = boundText.verticalAlign;
+        break;
+      }
+    }
     const idx = VERTICAL_ALIGNS.indexOf(current as VerticalAlign);
     const next =
       VERTICAL_ALIGNS[(idx === -1 ? 0 : idx + 1) % VERTICAL_ALIGNS.length];
