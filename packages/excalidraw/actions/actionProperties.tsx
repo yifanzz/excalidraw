@@ -2041,3 +2041,159 @@ export const actionChangeArrowType = register<keyof typeof ARROW_TYPE>({
     );
   },
 });
+
+// ---------------------------------------------------------------------------
+// Keyboard shortcut cycling actions
+// ---------------------------------------------------------------------------
+
+const STROKE_STYLES: ExcalidrawElement["strokeStyle"][] = [
+  "solid",
+  "dashed",
+  "dotted",
+];
+
+const STROKE_WIDTHS: ExcalidrawElement["strokeWidth"][] = [
+  STROKE_WIDTH.thin,
+  STROKE_WIDTH.bold,
+  STROKE_WIDTH.extraBold,
+];
+
+const TEXT_ALIGNS: TextAlign[] = ["left", "center", "right"];
+const VERTICAL_ALIGNS: VerticalAlign[] = [
+  VERTICAL_ALIGN.TOP as VerticalAlign,
+  VERTICAL_ALIGN.MIDDLE as VerticalAlign,
+  VERTICAL_ALIGN.BOTTOM as VerticalAlign,
+];
+
+export const actionCycleStrokeStyle = register({
+  name: "cycleStrokeStyle",
+  label: "Cycle stroke style",
+  trackEvent: false,
+  perform: (elements, appState) => {
+    const current = appState.currentItemStrokeStyle;
+    const next =
+      STROKE_STYLES[
+        (STROKE_STYLES.indexOf(current) + 1) % STROKE_STYLES.length
+      ];
+    return {
+      elements: changeProperty(elements, appState, (el) =>
+        newElementWith(el, { strokeStyle: next }),
+      ),
+      appState: { ...appState, currentItemStrokeStyle: next },
+      captureUpdate: CaptureUpdateAction.IMMEDIATELY,
+    };
+  },
+  keyTest: (event) =>
+    event.shiftKey &&
+    !event[KEYS.CTRL_OR_CMD] &&
+    !event.altKey &&
+    event.key.toUpperCase() === "S",
+});
+
+export const actionCycleStrokeWidth = register({
+  name: "cycleStrokeWidth",
+  label: "Cycle stroke width",
+  trackEvent: false,
+  perform: (elements, appState) => {
+    const current = appState.currentItemStrokeWidth;
+    const idx = STROKE_WIDTHS.indexOf(current);
+    const next =
+      STROKE_WIDTHS[(idx === -1 ? 0 : idx + 1) % STROKE_WIDTHS.length];
+    return {
+      elements: changeProperty(elements, appState, (el) =>
+        newElementWith(el, { strokeWidth: next }),
+      ),
+      appState: { ...appState, currentItemStrokeWidth: next },
+      captureUpdate: CaptureUpdateAction.IMMEDIATELY,
+    };
+  },
+  keyTest: (event) =>
+    event.shiftKey &&
+    !event[KEYS.CTRL_OR_CMD] &&
+    !event.altKey &&
+    event.key.toUpperCase() === "W",
+});
+
+export const actionCycleTextAlign = register({
+  name: "cycleTextAlign",
+  label: "Cycle text alignment",
+  trackEvent: false,
+  perform: (elements, appState, _value, app) => {
+    const current = appState.currentItemTextAlign;
+    const next =
+      TEXT_ALIGNS[(TEXT_ALIGNS.indexOf(current) + 1) % TEXT_ALIGNS.length];
+    return {
+      elements: changeProperty(
+        elements,
+        appState,
+        (oldElement) => {
+          if (isTextElement(oldElement)) {
+            const newElement = newElementWith(oldElement, { textAlign: next });
+            redrawTextBoundingBox(
+              newElement,
+              app.scene.getContainerElement(oldElement),
+              app.scene,
+            );
+            return newElement;
+          }
+          return oldElement;
+        },
+        true,
+      ),
+      appState: { ...appState, currentItemTextAlign: next },
+      captureUpdate: CaptureUpdateAction.IMMEDIATELY,
+    };
+  },
+  keyTest: (event) =>
+    event.shiftKey &&
+    !event[KEYS.CTRL_OR_CMD] &&
+    !event.altKey &&
+    event.key.toUpperCase() === "A",
+});
+
+export const actionCycleVerticalAlign = register({
+  name: "cycleVerticalAlign",
+  label: "Cycle vertical alignment",
+  trackEvent: false,
+  perform: (elements, appState, _value, app) => {
+    const selected = getTargetElements(
+      getNonDeletedElements(elements),
+      appState,
+    );
+    const currentFromElement = selected.find((el) => isTextElement(el));
+    const current = currentFromElement
+      ? (currentFromElement as ExcalidrawTextElement).verticalAlign
+      : VERTICAL_ALIGN.TOP;
+    const idx = VERTICAL_ALIGNS.indexOf(current as VerticalAlign);
+    const next =
+      VERTICAL_ALIGNS[(idx === -1 ? 0 : idx + 1) % VERTICAL_ALIGNS.length];
+    return {
+      elements: changeProperty(
+        elements,
+        appState,
+        (oldElement) => {
+          if (isTextElement(oldElement)) {
+            const newElement = newElementWith(oldElement, {
+              verticalAlign: next,
+            });
+            redrawTextBoundingBox(
+              newElement,
+              app.scene.getContainerElement(oldElement),
+              app.scene,
+            );
+            return newElement;
+          }
+          return oldElement;
+        },
+        true,
+      ),
+      appState: { ...appState },
+      captureUpdate: CaptureUpdateAction.IMMEDIATELY,
+    };
+  },
+  keyTest: (event) =>
+    event.shiftKey &&
+    !event[KEYS.CTRL_OR_CMD] &&
+    !event.altKey &&
+    event.key.toUpperCase() === "V",
+});

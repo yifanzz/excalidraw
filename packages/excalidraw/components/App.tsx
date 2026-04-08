@@ -645,8 +645,6 @@ class App extends React.Component<AppProps, AppState> {
 
   public files: BinaryFiles = {};
   public imageCache: AppClassProperties["imageCache"] = new Map();
-  private fileWatchInterval: ReturnType<typeof setInterval> | null = null;
-  private fileWatchLastModified: number = 0;
   private iFrameRefs = new Map<ExcalidrawElement["id"], HTMLIFrameElement>();
   /**
    * Indicates whether the embeddable's url has been validated for rendering.
@@ -3147,36 +3145,7 @@ class App extends React.Component<AppProps, AppState> {
     this.editorLifecycleEvents.emit("editor:mount", mountPayload);
     this.props.onMount?.(mountPayload);
     this.props.onExcalidrawAPI?.(this.api);
-
-    // Poll the open file handle for external changes (e.g. from sync daemon)
-    this.fileWatchInterval = setInterval(() => this.pollFileHandle(), 1000);
   }
-
-  private pollFileHandle = async () => {
-    const fileHandle = this.state.fileHandle;
-    if (!fileHandle) {
-      return;
-    }
-    try {
-      const file = await fileHandle.getFile();
-      const lastModified = file.lastModified;
-
-      if (
-        this.fileWatchLastModified > 0 &&
-        lastModified > this.fileWatchLastModified
-      ) {
-        this.fileWatchLastModified = lastModified;
-        await this.loadFileToCanvas(
-          new File([file], file.name, { type: file.type }),
-          fileHandle,
-        );
-      } else {
-        this.fileWatchLastModified = lastModified;
-      }
-    } catch {
-      // file may be temporarily unavailable during write
-    }
-  };
 
   public componentWillUnmount() {
     // we're recreating the api object reference so that the
@@ -3217,10 +3186,6 @@ class App extends React.Component<AppProps, AppState> {
     this.library.destroy();
     this.laserTrails.stop();
     this.eraserTrail.stop();
-    if (this.fileWatchInterval) {
-      clearInterval(this.fileWatchInterval);
-      this.fileWatchInterval = null;
-    }
     this.onChangeEmitter.clear();
     this.store.onStoreIncrementEmitter.clear();
     this.store.onDurableIncrementEmitter.clear();
