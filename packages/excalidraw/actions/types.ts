@@ -73,6 +73,7 @@ export type ActionName =
   | "cycleStrokeWidth"
   | "cycleTextAlign"
   | "cycleVerticalAlign"
+  | "cycleFontSize"
   | "changeArrowhead"
   | "changeArrowType"
   | "changeArrowProperties"

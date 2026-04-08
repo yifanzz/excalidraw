@@ -2238,3 +2238,44 @@ export const actionCycleVerticalAlign = register({
     !event.altKey &&
     event.key.toUpperCase() === "T",
 });
+
+const FONT_SIZE_VALUES: readonly number[] = [
+  FONT_SIZES.sm,
+  FONT_SIZES.md,
+  FONT_SIZES.lg,
+  FONT_SIZES.xl,
+];
+
+export const actionCycleFontSize = register({
+  name: "cycleFontSize",
+  label: "Cycle font size",
+  trackEvent: false,
+  perform: (elements, appState, _value, app) => {
+    const selected = getTargetElements(
+      getNonDeletedElements(elements),
+      appState,
+    );
+    const elementsMap = app.scene.getNonDeletedElementsMap();
+    let current = appState.currentItemFontSize;
+    for (const el of selected) {
+      if (isTextElement(el)) {
+        current = el.fontSize;
+        break;
+      }
+      const boundText = getBoundTextElement(el, elementsMap);
+      if (boundText) {
+        current = boundText.fontSize;
+        break;
+      }
+    }
+    const idx = FONT_SIZE_VALUES.indexOf(current);
+    const next =
+      FONT_SIZE_VALUES[(idx === -1 ? 0 : idx + 1) % FONT_SIZE_VALUES.length];
+    return changeFontSize(elements, appState, app, () => next);
+  },
+  keyTest: (event) =>
+    event.shiftKey &&
+    !event[KEYS.CTRL_OR_CMD] &&
+    !event.altKey &&
+    event.key.toUpperCase() === "Z",
+});
