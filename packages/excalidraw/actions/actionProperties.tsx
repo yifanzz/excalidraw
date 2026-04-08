@@ -2236,5 +2236,5 @@ export const actionCycleVerticalAlign = register({
     event.shiftKey &&
     !event[KEYS.CTRL_OR_CMD] &&
     !event.altKey &&
-    event.key.toUpperCase() === "V",
+    event.key.toUpperCase() === "T",
 });
