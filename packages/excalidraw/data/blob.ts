@@ -170,6 +170,11 @@ export const loadSceneOrLibraryFromBlob = async (
               theme: localAppState?.theme,
               fileHandle: fileHandle || blob.handle || null,
               ...cleanAppStateForExport(data.appState || {}),
+              name:
+                (fileHandle || blob.handle)?.name?.replace(
+                  /\.(excalidraw|json)$/,
+                  "",
+                ) || null,
               ...(localAppState
                 ? calculateScrollCenter(data.elements || [], localAppState)
                 : {}),
