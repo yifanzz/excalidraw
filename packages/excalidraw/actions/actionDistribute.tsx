@@ -88,7 +88,7 @@ export const distributeHorizontally = register({
     !event[KEYS.CTRL_OR_CMD] &&
     event.altKey &&
     event.shiftKey &&
-    event.code === CODES.H,
+    event.code === CODES.V,
   PanelComponent: ({ elements, appState, updateData, app }) => (
     <ToolButton
       hidden={!enableActionGroup(appState, app)}
@@ -96,7 +96,7 @@ export const distributeHorizontally = register({
       icon={DistributeHorizontallyIcon}
       onClick={() => updateData(null)}
       title={`${t("labels.distributeHorizontally")} — ${getShortcutKey(
-        "Alt+Shift+H",
+        "Alt+Shift+V",
       )}`}
       aria-label={t("labels.distributeHorizontally")}
       visible={isSomeElementSelected(getNonDeletedElements(elements), appState)}
@@ -119,19 +119,14 @@ export const distributeVertically = register({
     };
   },
   keyTest: (event) =>
-    !event[KEYS.CTRL_OR_CMD] &&
-    event.altKey &&
-    event.shiftKey &&
-    event.code === CODES.V,
+    !event[KEYS.CTRL_OR_CMD] && event.altKey && !event.shiftKey && event.code === CODES.V,
   PanelComponent: ({ elements, appState, updateData, app }) => (
     <ToolButton
       hidden={!enableActionGroup(appState, app)}
       type="button"
       icon={DistributeVerticallyIcon}
       onClick={() => updateData(null)}
-      title={`${t("labels.distributeVertically")} — ${getShortcutKey(
-        "Alt+Shift+V",
-      )}`}
+      title={`${t("labels.distributeVertically")} — ${getShortcutKey("Alt+V")}`}
       aria-label={t("labels.distributeVertically")}
       visible={isSomeElementSelected(getNonDeletedElements(elements), appState)}
     />
